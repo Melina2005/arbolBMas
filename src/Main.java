@@ -1,6 +1,8 @@
+
 import java.util.Scanner;
 
 public class Main {
+
     private static arbolBMas arbol;
     private static Scanner scanner = new Scanner(System.in);
 
@@ -24,21 +26,25 @@ public class Main {
             System.out.println();
 
             switch (opcion) {
-                case 1 -> insertarElemento();
-                case 2 -> buscarElemento();
-                case 3 -> eliminarElemento();
-                case 4 -> recorrerArbol();
-                case 5 -> imprimirEstructura();
-                case 0 -> System.out.println("Saliendo del programa...");
-                default -> System.out.println("Opción no válida. Intente nuevamente.\n");
+                case 1 ->
+                    insertarElemento();
+                case 2 ->
+                    buscarElemento();
+                case 3 ->
+                    eliminarElemento();
+                case 4 ->
+                    recorrerArbol();
+                case 5 ->
+                    imprimirEstructura();
+                case 0 ->
+                    System.out.println("Saliendo del programa...");
+                default ->
+                    System.out.println("Opción no válida. Intente nuevamente.\n");
             }
 
         } while (opcion != 0);
     }
 
-    /**
-     * Muestra el menú principal.
-     */
     private static void mostrarMenu() {
         System.out.println("═══════════════════════════════════════");
         System.out.println("                 MENÚ                  ");

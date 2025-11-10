@@ -1,7 +1,7 @@
-import java.util.ArrayList;
-import java.util.List;
+
 
 public class arbolBMas {
+
     private Nodo raiz;
     private int orden;
 
@@ -17,14 +17,12 @@ public class arbolBMas {
         try {
             Nodo nodo = raiz;
 
-            // Buscar el nodo hoja donde insertar
             while (!nodo.esHoja) {
                 int i = 0;
                 while (i < nodo.claves.size() && clave >= nodo.claves.get(i)) {
                     i++;
                 }
 
-                // Validar límites para evitar IndexOutOfBounds
                 if (i >= nodo.hijos.size()) {
                     i = nodo.hijos.size() - 1;
                 }
@@ -32,17 +30,14 @@ public class arbolBMas {
                 nodo = nodo.hijos.get(i);
             }
 
-            // Validar si la clave ya existe en la hoja
             if (nodo.claves.contains(clave)) {
                 System.out.println("Inserción cancelada: la clave " + clave + " ya existe en el árbol.");
                 return;
             }
 
-            // Insertar clave en la hoja
             nodo.insertarClave(clave, valor);
             System.out.println("Inserción exitosa: clave " + clave + " agregada correctamente.");
 
-            // Verificar si hay que dividir el nodo
             if (nodo.claves.size() == orden) {
                 dividirNodo(nodo);
                 System.out.println("Se dividió el nodo debido a exceso de claves (orden " + orden + ").");
@@ -55,13 +50,20 @@ public class arbolBMas {
         }
     }
 
-
     private void dividirNodo(Nodo nodo) {
         Nodo nuevo = nodo.dividir(orden);
 
         if (nodo.padre == null) {
             Nodo nuevaRaiz = new Nodo(false);
-            nuevaRaiz.claves.add(nuevo.claves.get(0));
+
+            int claveSube;
+            if (nodo.esHoja) {
+                claveSube = nuevo.claves.get(0);
+            } else {
+                claveSube = nuevo.claves.remove(0);
+            }
+
+            nuevaRaiz.claves.add(claveSube);
             nuevaRaiz.hijos.add(nodo);
             nuevaRaiz.hijos.add(nuevo);
             nodo.padre = nuevaRaiz;
@@ -69,7 +71,13 @@ public class arbolBMas {
             this.raiz = nuevaRaiz;
         } else {
             Nodo padre = nodo.padre;
-            int claveSube = nuevo.claves.get(0);
+            int claveSube;
+
+            if (nodo.esHoja) {
+                claveSube = nuevo.claves.get(0);
+            } else {
+                claveSube = nuevo.claves.remove(0);
+            }
 
             int i = 0;
             while (i < padre.claves.size() && claveSube > padre.claves.get(i)) {
@@ -78,7 +86,6 @@ public class arbolBMas {
 
             padre.claves.add(i, claveSube);
 
-            // 🔹 Validación para evitar out of bounds
             if (i + 1 > padre.hijos.size()) {
                 padre.hijos.add(nuevo);
             } else {
@@ -91,7 +98,6 @@ public class arbolBMas {
                 dividirNodo(padre);
             }
         }
-
     }
 
     public String buscar(int clave) {
@@ -112,7 +118,6 @@ public class arbolBMas {
                 }
 
                 if (nodo.hijos == null || nodo.hijos.isEmpty()) {
-                    // No hay hijos, se detiene para evitar crash
                     System.out.println("Nodo sin hijos durante búsqueda, estructura inconsistente.");
                     return null;
                 }
@@ -129,12 +134,13 @@ public class arbolBMas {
             }
         }
 
-        return null; // Si llega aquí, no encontró nada
+        return null;
     }
 
-
     public boolean eliminar(int clave) {
-        if (raiz == null) return false;
+        if (raiz == null) {
+            return false;
+        }
 
         boolean eliminado = eliminarRecursivo(raiz, clave);
 
@@ -149,7 +155,9 @@ public class arbolBMas {
     private boolean eliminarRecursivo(Nodo nodo, int clave) {
         if (nodo.esHoja) {
             int idx = nodo.claves.indexOf(clave);
-            if (idx == -1) return false;
+            if (idx == -1) {
+                return false;
+            }
 
             nodo.claves.remove(idx);
             nodo.valores.remove(idx);
@@ -163,7 +171,9 @@ public class arbolBMas {
 
         Nodo hijo = nodo.hijos.get(i);
         boolean eliminado = eliminarRecursivo(hijo, clave);
-        if (!eliminado) return false;
+        if (!eliminado) {
+            return false;
+        }
 
         int minClaves = (int) Math.ceil((orden - 1) / 2.0);
         if (hijo.claves.size() < minClaves) {
@@ -179,17 +189,33 @@ public class arbolBMas {
     }
 
     private void rebalancear(Nodo padre, int indiceHijo) {
+        if (padre == null || indiceHijo < 0 || indiceHijo >= padre.hijos.size()) {
+            return;
+        }
+
         Nodo hijo = padre.hijos.get(indiceHijo);
         Nodo hermanoIzq = (indiceHijo > 0) ? padre.hijos.get(indiceHijo - 1) : null;
         Nodo hermanoDer = (indiceHijo < padre.hijos.size() - 1) ? padre.hijos.get(indiceHijo + 1) : null;
 
         int minClaves = (int) Math.ceil((orden - 1) / 2.0);
 
+        if (hijo.claves.isEmpty()) {
+            if (hermanoIzq != null) {
+                fusionar(padre, indiceHijo - 1, hermanoIzq, hijo);
+            } else if (hermanoDer != null) {
+                fusionar(padre, indiceHijo, hijo, hermanoDer);
+            }
+            if (padre == raiz && padre.claves.isEmpty() && padre.hijos.size() == 1) {
+                raiz = padre.hijos.get(0);
+                raiz.padre = null;
+            }
+            return;
+        }
+
         if (hermanoIzq != null && hermanoIzq.claves.size() > minClaves) {
             if (hijo.esHoja) {
                 int clavePrestada = hermanoIzq.claves.remove(hermanoIzq.claves.size() - 1);
                 String valorPrestado = hermanoIzq.valores.remove(hermanoIzq.valores.size() - 1);
-
                 hijo.claves.add(0, clavePrestada);
                 hijo.valores.add(0, valorPrestado);
                 padre.claves.set(indiceHijo - 1, hijo.claves.get(0));
@@ -197,7 +223,6 @@ public class arbolBMas {
                 int clavePadre = padre.claves.get(indiceHijo - 1);
                 int clavePrestada = hermanoIzq.claves.remove(hermanoIzq.claves.size() - 1);
                 Nodo hijoPrestado = hermanoIzq.hijos.remove(hermanoIzq.hijos.size() - 1);
-
                 hijo.claves.add(0, clavePadre);
                 hijo.hijos.add(0, hijoPrestado);
                 hijoPrestado.padre = hijo;
@@ -210,7 +235,6 @@ public class arbolBMas {
             if (hijo.esHoja) {
                 int clavePrestada = hermanoDer.claves.remove(0);
                 String valorPrestado = hermanoDer.valores.remove(0);
-
                 hijo.claves.add(clavePrestada);
                 hijo.valores.add(valorPrestado);
                 padre.claves.set(indiceHijo, hermanoDer.claves.get(0));
@@ -218,7 +242,6 @@ public class arbolBMas {
                 int clavePadre = padre.claves.get(indiceHijo);
                 int clavePrestada = hermanoDer.claves.remove(0);
                 Nodo hijoPrestado = hermanoDer.hijos.remove(0);
-
                 hijo.claves.add(clavePadre);
                 hijo.hijos.add(hijoPrestado);
                 hijoPrestado.padre = hijo;
@@ -231,6 +254,11 @@ public class arbolBMas {
             fusionar(padre, indiceHijo - 1, hermanoIzq, hijo);
         } else if (hermanoDer != null) {
             fusionar(padre, indiceHijo, hijo, hermanoDer);
+        }
+
+        if (padre == raiz && padre.claves.isEmpty() && padre.hijos.size() == 1) {
+            raiz = padre.hijos.get(0);
+            raiz.padre = null;
         }
     }
 
@@ -250,6 +278,10 @@ public class arbolBMas {
         }
 
         padre.hijos.remove(indice + 1);
+        if (padre.claves.isEmpty() && padre == raiz && padre.hijos.size() == 1) {
+            raiz = padre.hijos.get(0);
+            raiz.padre = null;
+        }
     }
 
     public void recorrer(int claveInicial, int n) {
@@ -286,12 +318,13 @@ public class arbolBMas {
             return;
         }
 
-        System.out.println("Estructura completa del Árbol B+:\n");
         imprimirNodoRec(raiz, 0, "Raíz");
     }
 
     private void imprimirNodoRec(Nodo nodo, int nivel, String tipo) {
-        for (int i = 0; i < nivel; i++) System.out.print("   ");
+        for (int i = 0; i < nivel; i++) {
+            System.out.print("   ");
+        }
 
         System.out.print(tipo + " ");
         nodo.imprimirNodo();
@@ -306,9 +339,10 @@ public class arbolBMas {
                 imprimirNodoRec(hijo, nivel + 1, subtipo);
             }
         } else if (nodo.siguiente != null) {
-            for (int i = 0; i < nivel + 1; i++) System.out.print("   ");
+            for (int i = 0; i < nivel + 1; i++) {
+                System.out.print("   ");
+            }
             System.out.println("↓ enlazado con hoja siguiente: " + nodo.siguiente.claves);
         }
     }
-
 }

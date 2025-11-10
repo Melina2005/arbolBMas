@@ -1,19 +1,21 @@
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Nodo {
+
     List<Integer> claves;
-    List<String> valores; // Solo se usa si es hoja
+    List<String> valores;
     List<Nodo> hijos;
     boolean esHoja;
-    Nodo siguiente; // Enlace entre hojas
+    Nodo siguiente;
     Nodo padre;
 
     public Nodo(boolean esHoja) {
+        this.esHoja = esHoja;
         this.claves = new ArrayList<>();
         this.valores = new ArrayList<>();
         this.hijos = new ArrayList<>();
-        this.esHoja = esHoja;
         this.siguiente = null;
         this.padre = null;
     }
@@ -24,71 +26,49 @@ public class Nodo {
             i++;
         }
         claves.add(i, clave);
-
         if (esHoja) {
             valores.add(i, valor);
         }
     }
 
     public Nodo dividir(int orden) {
-        int puntoMedio = claves.size() / 2;
+        int mitad = claves.size() / 2;
+        Nodo nuevo = new Nodo(esHoja);
+        nuevo.padre = padre;
 
-        // Crear nuevo nodo
-        Nodo nuevoNodo = new Nodo(this.esHoja);
-        nuevoNodo.padre = this.padre;
-
-        // Mover la mitad derecha al nuevo nodo
         if (esHoja) {
-            for (int i = puntoMedio; i < claves.size(); i++) {
-                nuevoNodo.claves.add(claves.get(i));
-                nuevoNodo.valores.add(valores.get(i));
-            }
-
-            // Enlazar hojas
-            nuevoNodo.siguiente = this.siguiente;
-            this.siguiente = nuevoNodo;
-
-            // Eliminar la mitad derecha del nodo actual
-            for (int i = claves.size() - 1; i >= puntoMedio; i--) {
-                claves.remove(i);
-                valores.remove(i);
-            }
+            nuevo.claves.addAll(claves.subList(mitad, claves.size()));
+            nuevo.valores.addAll(valores.subList(mitad, valores.size()));
+            claves = new ArrayList<>(claves.subList(0, mitad));
+            valores = new ArrayList<>(valores.subList(0, mitad));
+            nuevo.siguiente = siguiente;
+            siguiente = nuevo;
         } else {
-            // Nodo interno: la clave del medio sube al padre
-            int claveMedia = claves.get(puntoMedio);
-
-            // Mover claves e hijos derechos al nuevo nodo
-            for (int i = puntoMedio + 1; i < claves.size(); i++) {
-                nuevoNodo.claves.add(claves.get(i));
+            int claveMedia = claves.get(mitad);
+            nuevo.claves.addAll(claves.subList(mitad + 1, claves.size()));
+            nuevo.hijos.addAll(hijos.subList(mitad + 1, hijos.size()));
+            for (Nodo h : nuevo.hijos) {
+                h.padre = nuevo;
             }
-            for (int i = puntoMedio + 1; i < hijos.size(); i++) {
-                Nodo hijo = hijos.get(i);
-                nuevoNodo.hijos.add(hijo);
-                hijo.padre = nuevoNodo;
-            }
-
-            // Eliminar la mitad derecha del nodo actual
-            for (int i = claves.size() - 1; i >= puntoMedio; i--) {
-                claves.remove(i);
-            }
-            for (int i = hijos.size() - 1; i >= puntoMedio + 1; i--) {
-                hijos.remove(i);
-            }
-
-            // Retornar el nuevo nodo (el valor que sube lo maneja el árbol)
-            nuevoNodo.insertarClave(claveMedia, null);
+            claves = new ArrayList<>(claves.subList(0, mitad));
+            hijos = new ArrayList<>(hijos.subList(0, mitad + 1));
+            nuevo.insertarClave(claveMedia, null);
         }
 
-        return nuevoNodo;
+        return nuevo;
     }
 
     public void imprimirNodo() {
         System.out.print("[");
         for (int i = 0; i < claves.size(); i++) {
             System.out.print(claves.get(i));
-            if (i < claves.size() - 1) System.out.print(", ");
+            if (i < claves.size() - 1) {
+                System.out.print(", ");
+            }
         }
         System.out.print("]");
-        if (esHoja) System.out.print(" -> ");
+        if (esHoja) {
+            System.out.print(" -> ");
+        }
     }
 }
